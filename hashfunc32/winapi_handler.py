@@ -52,7 +52,9 @@ class HashHandler:
     def find_hash(self, hash_value: int):
         if self.has_database():
             hash_db = self.__get_database()
-            return hash_db.fetch_hash_from_table(hash_value)
+            hash_strs = hash_db.fetch_hash_from_table(hash_value)
+            hash_db.close()
+            return hash_strs
         if hash_value in self.hash_table:
             return list(self.hash_table[hash_value])
         return []
