@@ -18,25 +18,31 @@ class HashDB:
     def __create_table(self):
         self.cursor.execute(f"SELECT count(name) FROM sqlite_master WHERE type='table' AND name='{self.__TABLE_NAME}';")
         if (self.cursor.fetchone()[0] == 0):
-            self.cursor.execute(f"CREATE TABLE {self.__TABLE_NAME}(id INTEGER PRIMARY KEY, hash_value INTEGER, hash_str TEXT);")
+            self.cursor.execute(f"CREATE TABLE {self.__TABLE_NAME}(id INTEGER PRIMARY KEY, hash_value INTEGER, hash_str TEXT, dll_name TEXT);")
             self.connection.commit()
     
     def close(self):
         self.cursor.close()
         self.connection.close()
 
-    def add_hash_table_to_database(self, hash_table: Dict[int, List[str]]):
+    def add_hash_table_to_database(self, hash_table: Dict[int, List[Tuple[str, str]]]):
         records: List[Tuple[int, str]] = []
         for hash_value, hash_keys in hash_table.items():
             for hash_key in hash_keys:
-                records.append((hash_value, hash_key))
+                records.append((hash_value, hash_key[0], hash_key[1]))
 
-        self.cursor.executemany(f"INSERT INTO {self.__TABLE_NAME}(hash_value, hash_str) VALUES(?, ?);", records)
+        self.cursor.executemany(f"INSERT INTO {self.__TABLE_NAME}(hash_value, hash_str, dll_name) VALUES(?, ?, ?);", records)
         self.connection.commit()
         logger.debug("Inserted %d values into %s", len(records), self.db_path)
 
-    def fetch_hash_from_table(self, hash_value: int) -> List[str]:
-        self.cursor.execute(f"SELECT hash_str FROM {self.__TABLE_NAME} WHERE hash_value=?;", (hash_value,))
+    def fetch_hash_from_table(self, hash_value: int) -> List[Tuple[str, str]]:
+        self.cursor.execute(f"SELECT hash_str, dll_name FROM {self.__TABLE_NAME} WHERE hash_value=?;", (hash_value,))
         fetched = self.cursor.fetchall()
         logger.debug("Found %d values from %s", len(fetched), self.db_path)
-        return [c[0] for c in fetched]
+        return [(c[0], c[1]) for c in fetched]
+
+    def fetch_hashes_from_table(self) -> List[Tuple[str, str, str]]:
+        self.cursor.execute(f"SELECT hash_value, hash_str, dll_name FROM {self.__TABLE_NAME};")
+        fetched = self.cursor.fetchall()
+        logger.debug("Found %d values from %s", len(fetched), self.db_path)
+        return [(c[0], c[1], c[2]) for c in fetched]

@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name="hashfunc32",
-    version="0.0.2",
+    version="0.0.3",
     description="Find hashes in WinAPI",
     packages=['hashfunc32'],
     install_requires=['click'],
